@@ -774,17 +774,18 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
     <div class="wizard-page" id="wp1">
       <div class="form-group">
         <label class="form-label">Sport(s)</label>
-        <p class="form-hint">Add each sport you are recruiting for.</p>
+        <p class="form-hint">Type or select a sport — it will be added automatically.</p>
         <div class="sport-add-row" style="margin-top:10px">
           <input id="ob-sport-inp" class="form-input" type="text" placeholder="Type a sport name…"
                  list="sport-datalist"
                  autocomplete="off"
                  onkeydown="if(event.key==='Enter'){event.preventDefault();wizardAddSport()}"
-                 oninput="sportInputFilter(this)">
+                 oninput="sportInputFilter(this)"
+                 onchange="wizardAddSport()">
           <datalist id="sport-datalist"></datalist>
           <button class="btn-add-sport" onclick="wizardAddSport()">Add</button>
         </div>
-        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Start typing to see suggestions. Select "Other" to type in any sport.</p>
+        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Select from the list or type any sport name and press Enter. Choose "Other" to enter a custom sport.</p>
         <div id="ob-sport-tags" class="sport-tags"></div>
       </div>
       <div class="wizard-btns">
@@ -2990,7 +2991,10 @@ function initSportDatalist(){
 }
 function sportInputFilter(inp){
   // If user typed 'Other', clear the input and let them type custom sport
-  if(inp.value==='Other'){inp.value='';inp.placeholder='Type your sport name…';}
+  if(inp.value==='Other'){inp.value='';inp.placeholder='Type your sport name…';return;}
+  // Auto-add when user selects an exact match from the datalist
+  const val=inp.value.trim();
+  if(val&&(ALL_SPORTS.includes(val))){wizardAddSport();}
 }
 // ── COACH DATABASE AUTO-POPULATE ────────────────────────────
 // Maps tracker sport names to the DB constant they live in.
