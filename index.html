@@ -916,6 +916,9 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
         <input id="sm-coach-phone" class="form-input" type="tel" placeholder="(555) 555-5555">
       </div>
     </div>
+    <div style="margin-bottom:12px">
+      <button type="button" onclick="saveCoachVCard('head')" style="font-size:11px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:6px;padding:5px 12px;cursor:pointer;font-weight:600">📇 Save Head Coach to Contacts</button>
+    </div>
     <div class="form-group">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <label class="form-label" style="margin:0">Assistant Coaches</label>
@@ -1832,7 +1835,7 @@ function hsInputSearch(inp, suggId){
   const matches=known.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
   if(!matches.length){wrap.style.display='none';return;}
   wrap.style.display='block';
-  wrap.innerHTML=matches.map(s=>`<div onclick="selectHS(${JSON.stringify(s)},${JSON.stringify(inp.id)},${JSON.stringify(suggId||'hs-suggestions')})" style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f4f8" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
+  wrap.innerHTML=matches.map(s=>`<div onmousedown="event.preventDefault();selectHS(${JSON.stringify(s)},${JSON.stringify(inp.id)},${JSON.stringify(suggId||'hs-suggestions')})" style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f4f8" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
 }
 function selectHS(name, inputId, suggId){
   const inp=document.getElementById(inputId||'ob-hs');
@@ -2779,7 +2782,7 @@ function autoPopulateSchools(config){
         location:entry.l,region:entry.r,website:entry.w||'',
         headCoach:entry.hc||'',headCoachEmail:entry.hce||'',headCoachPhone:entry.hcp||'',conference:entry.conf||'',
         assistantCoaches:(entry.ac||[]).map(function(a){return {name:a.n||'',email:a.e||'',phone:''};}).filter(function(a){return a.name;}),
-        interest:'More Info',
+        interest:'More Info',autoAdded:true,
         coachContact:'',coachingStaff:'',research:'',observations:'',
         outreach:[],campusVisit:[],followUp:'',comments:''
       });
@@ -2898,7 +2901,7 @@ function init(){
 }
 function setCopyright(){
   const yr=new Date().getFullYear();
-  el('copyright-line').textContent=`Copyright © ${yr} Verum Ventus LLC. All Rights Reserved.`;
+  el('copyright-line').textContent=`© ${yr} Verum Ventus. All Rights Reserved.`;
 }
 function buildYearSelect(selId){
   const sel=el(selId);if(!sel)return;
@@ -4130,14 +4133,26 @@ function saveRecruitingPrefs(){
   const stateSel=el('pr-state-sel');
   const newState=(stateCb&&stateCb.checked&&stateSel)?stateSel.value:'';
   // Apply
+  // Remove auto-added schools that no longer match the new regions/divisions
+  const prevCount=(state.schools||[]).length;
   state.config.divisions=newDivs;
   state.config.regions=newRegs;
   state.config.stateFilter=newState;
+  state.schools=(state.schools||[]).filter(s=>{
+    if(!s.autoAdded)return true; // never remove manually-added schools
+    const divOk=!newDivs.length||newDivs.includes(s.division);
+    const regOk=!newRegs.length||regionMatch(s.region,newRegs);
+    return divOk&&regOk;
+  });
+  const removed=prevCount-(state.schools||[]).length;
   const added=autoPopulateSchools(state.config);
   const coachFills=applyCoachDatabase();
   saveState();
   renderCurrentTab();
-  let msg=added>0?`Preferences saved · Added ${added} new school${added!==1?'s':''}.`:'Preferences saved — school list already up to date.';
+  let msg=`Preferences saved.`;
+  if(added>0)msg+=` Added ${added} school${added!==1?'s':''}.`;
+  if(removed>0)msg+=` Removed ${removed} school${removed!==1?'s':''} no longer in your regions.`;
+  if(!added&&!removed)msg=' School list already up to date.';
   if(coachFills>0)msg+=` Coach info filled for ${coachFills} school${coachFills!==1?'s':''}.`;
   showToast(msg,4000);
 }
@@ -4284,19 +4299,58 @@ function renderAsstCoaches(){
   const container=el('sm-asst-coaches');if(!container)return;
   if(!modalAsstCoaches.length){container.innerHTML='<p style="font-size:12px;color:#a0aec0;padding:4px 0">No assistant coaches added yet.</p>';return;}
   container.innerHTML=modalAsstCoaches.map((ac,i)=>`
-    <div class="asst-coach-entry">
+    <div class="asst-coach-entry" data-asst-idx="${i}">
       <button type="button" class="remove-asst" onclick="removeAsstCoach(${i})" title="Remove">✕</button>
       <div class="form-row" style="margin-bottom:6px;padding-right:24px">
-        <input class="form-input asst-coach-name" type="text" placeholder="Coach Name" value="${h(ac.name||'')}" onchange="updateAsstCoach(${i},'name',this.value)">
-        <input class="form-input" type="text" placeholder="Role (e.g. Assoc. HC)" value="${h(ac.role||'')}" onchange="updateAsstCoach(${i},'role',this.value)">
+        <input class="form-input asst-coach-name asst-name-inp" type="text" placeholder="Coach Name" value="${h(ac.name||'')}" onchange="updateAsstCoach(${i},'name',this.value)">
+        <input class="form-input asst-role-inp" type="text" placeholder="Role (e.g. Assoc. HC)" value="${h(ac.role||'')}" onchange="updateAsstCoach(${i},'role',this.value)">
       </div>
-      <div class="form-row">
-        <input class="form-input" type="email" placeholder="Email" value="${h(ac.email||'')}" onchange="updateAsstCoach(${i},'email',this.value)">
-        <input class="form-input" type="tel" placeholder="Phone" value="${h(ac.phone||'')}" onchange="updateAsstCoach(${i},'phone',this.value)">
+      <div class="form-row" style="margin-bottom:4px">
+        <input class="form-input asst-email-inp" type="email" placeholder="Email" value="${h(ac.email||'')}" onchange="updateAsstCoach(${i},'email',this.value)">
+        <input class="form-input asst-phone-inp" type="tel" placeholder="Phone" value="${h(ac.phone||'')}" onchange="updateAsstCoach(${i},'phone',this.value)">
       </div>
+      <button type="button" onclick="saveCoachVCard('asst',${i})" style="font-size:11px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:600;margin-bottom:4px">📇 Save to Contacts</button>
     </div>`).join('');
 }
 
+// ── vCard / Save to Contacts ─────────────────────────────────
+function buildVCard(name, title, schoolName, email, phone){
+  if(!name&&!email)return null;
+  const lines=[
+    'BEGIN:VCARD','VERSION:3.0',
+    'FN:'+(name||''),
+    'TITLE:'+(title||''),
+    'ORG:'+(schoolName||''),
+  ];
+  if(email)lines.push('EMAIL;TYPE=WORK,INTERNET:'+email);
+  if(phone)lines.push('TEL;TYPE=WORK,VOICE:'+phone);
+  lines.push('NOTE:Added from College Recruiting Tracker');
+  lines.push('END:VCARD');
+  return lines.join('\r\n');
+}
+function downloadVCF(vcf, filename){
+  if(!vcf){showToast('No contact info to save yet — fill in coach name or email first.');return;}
+  const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename||'contact.vcf';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+function saveCoachVCard(type, asstIdx){
+  const school=el('sm-name').value.trim()||'';
+  if(type==='head'){
+    const name=el('sm-coach').value.trim();
+    const email=el('sm-coach-email').value.trim();
+    const phone=el('sm-coach-phone').value.trim();
+    downloadVCF(buildVCard(name,'Head Coach - '+school,school,email,phone),(name||'head_coach').replace(/\s+/g,'_')+'.vcf');
+  } else {
+    const row=document.querySelector(`.asst-coach-entry[data-asst-idx="${asstIdx}"]`);if(!row)return;
+    const name=(row.querySelector('.asst-name-inp')||{}).value||'';
+    const role=(row.querySelector('.asst-role-inp')||{}).value||'Assistant Coach';
+    const email=(row.querySelector('.asst-email-inp')||{}).value||'';
+    const phone=(row.querySelector('.asst-phone-inp')||{}).value||'';
+    downloadVCF(buildVCard(name,(role||'Assistant Coach')+' - '+school,school,email,phone),(name||'asst_coach').replace(/\s+/g,'_')+'.vcf');
+  }
+}
 function deleteSchoolConfirm(id){
   const targetId=id||editingId;if(!targetId)return;
   const s=getSchool(targetId);if(!s)return;
