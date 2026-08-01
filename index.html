@@ -775,17 +775,16 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       <div class="form-group">
         <label class="form-label">Sport(s)</label>
         <p class="form-hint">Type or select a sport — it will be added automatically.</p>
-        <div class="sport-add-row" style="margin-top:10px">
+        <div class="sport-add-row" style="margin-top:10px;position:relative">
           <input id="ob-sport-inp" class="form-input" type="text" placeholder="Type a sport name…"
-                 list="sport-datalist"
                  autocomplete="off"
                  onkeydown="if(event.key==='Enter'){event.preventDefault();wizardAddSport()}"
-                 oninput="sportInputFilter(this)"
-                 onchange="wizardAddSport()">
-          <datalist id="sport-datalist"></datalist>
+                 oninput="sportDropdownFilter(this)"
+                 onfocus="sportDropdownFilter(this)">
+          <div id="sport-suggestions" style="display:none;position:absolute;left:0;right:48px;top:100%;z-index:400;background:white;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.15);max-height:240px;overflow-y:auto;margin-top:2px"></div>
           <button class="btn-add-sport" onclick="wizardAddSport()">Add</button>
         </div>
-        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Select from the list or type any sport name and press Enter. Choose "Other" to enter a custom sport.</p>
+        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Tap the field to see all sports, or type to filter. Press Enter or tap a sport to add it.</p>
         <div id="ob-sport-tags" class="sport-tags"></div>
       </div>
       <div class="wizard-btns">
@@ -955,10 +954,13 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
     </div>
     <div class="form-group">
       <label class="form-label">Sports</label>
-      <div class="sport-add-row">
-        <input id="set-sport-inp" class="form-input" list="sport-datalist" autocomplete="off" oninput="sportInputFilter(this)" type="text" placeholder="Add another sport…"
-               onkeydown="if(event.key==='Enter'){event.preventDefault();settingsAddSport()}">
-        <button class="btn-add-sport" onclick="settingsAddSport()">Add</button>
+      <div class="sport-add-row" style="position:relative">
+        <input id="set-sport-inp" class="form-input" autocomplete="off" type="text" placeholder="Add another sport…"
+               oninput="sportDropdownFilter(this,'set-sport-sugg','settingsAddSport')"
+               onfocus="sportDropdownFilter(this,'set-sport-sugg','settingsAddSport')"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();settingsAddSport();hideSportDropdown('set-sport-sugg')}">
+        <div id="set-sport-sugg" style="display:none;position:absolute;left:0;right:48px;top:100%;z-index:400;background:white;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.15);max-height:200px;overflow-y:auto;margin-top:2px"></div>
+        <button class="btn-add-sport" onclick="settingsAddSport();hideSportDropdown('set-sport-sugg')">Add</button>
       </div>
       <div id="set-sport-tags" class="sport-tags"></div>
     </div>
@@ -2982,6 +2984,7 @@ function updateWizardUI(){
 }
 function wizardAddSport(){
   const inp=el('ob-sport-inp');const val=inp.value.trim();if(!val)return;
+  hideSportDropdown('sport-suggestions');
   if(wizSports.includes(val)){showToast('Already added');inp.value='';return;}
   wizSports.push(val);renderWizSportTags();inp.value='';inp.focus();
 }
@@ -2989,18 +2992,25 @@ function removeWizSport(s){wizSports=wizSports.filter(x=>x!==s);renderWizSportTa
 function renderWizSportTags(){
   el('ob-sport-tags').innerHTML=wizSports.map(s=>`<span class="sport-tag">${h(s)}<button onclick="removeWizSport('${h(s)}')" title="Remove">✕</button></span>`).join('');
 }
-function initSportDatalist(){
-  const dl=document.getElementById('sport-datalist');
-  if(!dl)return;
-  dl.innerHTML=ALL_SPORTS.map(s=>`<option value="${h(s)}">`).join('');
+function initSportDatalist(){/* datalist replaced by custom dropdown — no-op */}
+function hideSportDropdown(id){const w=document.getElementById(id||'sport-suggestions');if(w)w.style.display='none';}
+function sportDropdownFilter(inp, suggId, addFn){
+  const wrapId=suggId||'sport-suggestions';
+  const wrap=document.getElementById(wrapId);if(!wrap)return;
+  const val=(inp.value||'').trim().toLowerCase();
+  const matches=val.length===0
+    ?ALL_SPORTS.slice(0,30)
+    :ALL_SPORTS.filter(s=>s.toLowerCase().includes(val)).slice(0,20);
+  if(!matches.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  const addFunc=addFn||'wizardAddSport';
+  wrap.innerHTML=matches.map(s=>`<div onmousedown="event.preventDefault();el('${inp.id}').value=${JSON.stringify(s)};${addFunc}();hideSportDropdown('${wrapId}')" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f4f8" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
 }
-function sportInputFilter(inp){
-  // If user typed 'Other', clear the input and let them type custom sport
-  if(inp.value==='Other'){inp.value='';inp.placeholder='Type your sport name…';return;}
-  // Auto-add when user selects an exact match from the datalist
-  const val=inp.value.trim();
-  if(val&&(ALL_SPORTS.includes(val))){wizardAddSport();}
-}
+// Close sport dropdown on outside tap
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#sport-suggestions')&&e.target.id!=='ob-sport-inp')hideSportDropdown('sport-suggestions');
+  if(!e.target.closest('#set-sport-sugg')&&e.target.id!=='set-sport-inp')hideSportDropdown('set-sport-sugg');
+});
 // ── COACH DATABASE AUTO-POPULATE ────────────────────────────
 // Maps tracker sport names to the DB constant they live in.
 // Add new sports here as more databases are created.
@@ -4369,7 +4379,7 @@ function openSettings(){
   el('settings-overlay').classList.remove('hidden');
 }
 function closeSettings(){el('settings-overlay').classList.add('hidden');}
-function settingsAddSport(){const inp=el('set-sport-inp');const val=inp.value.trim();if(!val)return;if(!setsSports.includes(val))setsSports.push(val);renderSetSportTags();inp.value='';}
+function settingsAddSport(){const inp=el('set-sport-inp');const val=inp.value.trim();if(!val)return;hideSportDropdown('set-sport-sugg');if(!setsSports.includes(val))setsSports.push(val);renderSetSportTags();inp.value='';}
 function removeSetSport(s){setsSports=setsSports.filter(x=>x!==s);renderSetSportTags();}
 function renderSetSportTags(){el('set-sport-tags').innerHTML=setsSports.map(s=>`<span class="sport-tag">${h(s)}<button onclick="removeSetSport('${h(s)}')" title="Remove">✕</button></span>`).join('');}
 function saveSettings(){
