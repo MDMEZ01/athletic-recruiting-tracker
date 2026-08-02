@@ -761,9 +761,13 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       </div>
       <div class="form-group">
         <label class="form-label">High School</label>
-        <input id="ob-hs" class="form-input" type="text" placeholder="Type your high school name…"
-               autocorrect="off" autocapitalize="words" spellcheck="false" list="hs-datalist">
-        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Type your high school name exactly as it appears.</p>
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <input id="ob-hs" class="form-input" type="text" placeholder="Type name, or tap 🔍 to search…"
+                 autocorrect="off" autocapitalize="words" spellcheck="false" list="hs-datalist" style="flex:1;margin-bottom:0">
+          <button type="button" onclick="openHsPicker('ob-hs')"
+                  style="flex-shrink:0;padding:0 16px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-size:20px;cursor:pointer;line-height:1" title="Search schools">🔍</button>
+        </div>
+        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Type your school name or tap 🔍 to search and pick from a list.</p>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -989,7 +993,13 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       <button class="btn-modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="form-group"><label class="form-label">Athlete Name</label><input id="set-name" class="form-input" type="text"></div>
-    <div class="form-group"><label class="form-label">High School</label><input id="set-hs" class="form-input" type="text" placeholder="Type your high school name…" autocorrect="off" autocapitalize="words" spellcheck="false" list="hs-datalist"></div>
+    <div class="form-group"><label class="form-label">High School</label>
+      <div style="display:flex;gap:8px;align-items:stretch">
+        <input id="set-hs" class="form-input" type="text" placeholder="Type name, or tap 🔍 to search…" autocorrect="off" autocapitalize="words" spellcheck="false" list="hs-datalist" style="flex:1;margin-bottom:0">
+        <button type="button" onclick="openHsPicker('set-hs')"
+                style="flex-shrink:0;padding:0 16px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-size:20px;cursor:pointer;line-height:1" title="Search schools">🔍</button>
+      </div>
+    </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Graduation Year</label><select id="set-year" class="form-select"></select></div>
       <div class="form-group"><label class="form-label">Competing As</label>
@@ -6894,12 +6904,23 @@ function closePicker(){el('picker-overlay').style.display='none';_pickerCb=null;
 function filterPickerList(q){
   const query=(q||'').toLowerCase();
   const matches=query?_pickerItems.filter(s=>s.toLowerCase().includes(query)).slice(0,60):_pickerItems.slice(0,80);
+  // Use <a href="javascript:void(0)"> + data-v attribute — <a> tags are always tappable on iOS
+  // and data-v avoids the HTML quoting bug that breaks onclick when JSON.stringify adds double quotes
+  const linkStyle='display:block;width:100%;text-align:left;padding:16px 18px;border-bottom:1px solid #f0f4f8;text-decoration:none;font-size:16px;font-family:inherit;-webkit-tap-highlight-color:rgba(42,74,127,0.12);touch-action:manipulation';
   const customBtn=(_pickerAllowCustom&&q&&q.trim())?
-    `<button type="button" onclick="selectPickerItem(${JSON.stringify(q.trim())})" style="display:block;width:100%;text-align:left;padding:14px 18px;border:none;border-bottom:2px solid #e2e8f0;background:#f0f8ff;color:#2a4a7f;font-size:15px;font-family:inherit;cursor:pointer;font-style:italic;-webkit-tap-highlight-color:rgba(42,74,127,0.1)">Use "${h(q.trim())}"</button>`
+    `<a href="javascript:void(0)" data-v="${h(q.trim())}" onclick="selectPickerItem(this.dataset.v)" style="${linkStyle};background:#f0f8ff;color:#2a4a7f;font-style:italic;border-bottom:2px solid #bfdbfe">Use &ldquo;${h(q.trim())}&rdquo;</a>`
     :'';
-  el('picker-list').innerHTML=customBtn+matches.map(s=>`<button type="button" onclick="selectPickerItem(${JSON.stringify(s)})" style="display:block;width:100%;text-align:left;padding:14px 18px;border:none;border-bottom:1px solid #f0f4f8;background:white;color:#1a202c;font-size:15px;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:rgba(42,74,127,0.1)">${h(s)}</button>`).join('');
+  el('picker-list').innerHTML=customBtn+matches.map(s=>`<a href="javascript:void(0)" data-v="${h(s)}" onclick="selectPickerItem(this.dataset.v)" style="${linkStyle};color:#1a202c">${h(s)}</a>`).join('');
 }
 function selectPickerItem(v){if(_pickerCb)_pickerCb(v);closePicker();}
+// Convenience helper for HS search buttons — works in template literals without quoting issues
+function openHsPicker(inputId){
+  const cur=el(inputId);
+  openPicker('Your High School',window._hsKnown||[],function(v){
+    const inp=el(inputId);if(inp)inp.value=v;
+    if(inputId==='pr-highschool')updateConfigField('highSchool',v);
+  },true,cur?cur.value||'':'');
+}
 // ─────────────────────────────────────────────────────────────────────────
 function sportDropdownFilter(inp, suggId, addFn){
   const wrapId=suggId||'sport-suggestions';
@@ -7928,12 +7949,14 @@ function renderProfile(){
       <div class="profile-field"><div class="profile-label">Full Name</div><input class="profile-input" type="text" value="${h(cfg.athleteName||'')}" readonly style="background:#f7fafc;color:#718096"><small style="display:block;font-size:11px;color:#a0aec0;padding-top:8px;padding-left:6px">(Edit in Settings ⚙)</small></div>
       <div class="profile-field"><div class="profile-label">High School</div>
         <div style="flex:1">
-          <div style="position:relative">
-            <input class="profile-input" type="text" id="pr-highschool" value="${h(cfg.highSchool||'')}" placeholder="Type your high school name…"
-                   autocorrect="off" autocapitalize="words" spellcheck="false" style="width:100%"
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <input class="profile-input" type="text" id="pr-highschool" value="${h(cfg.highSchool||'')}" placeholder="Type name or tap 🔍"
+                   autocorrect="off" autocapitalize="words" spellcheck="false" style="flex:1"
                    list="hs-datalist" onchange="updateConfigField('highSchool',this.value)">
+            <button type="button" onclick="openHsPicker('pr-highschool')"
+                    style="flex-shrink:0;padding:0 14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-size:18px;cursor:pointer;line-height:1" title="Search schools">🔍</button>
           </div>
-          <small style="font-size:11px;color:#a0aec0;padding-left:2px">Start typing to see suggestions, or type any school name. You can update this if you transfer schools.</small>
+          <small style="font-size:11px;color:#a0aec0;padding-left:2px">Type your school or tap 🔍 to browse. Update here if you transfer schools.</small>
         </div>
       </div>
       <div class="profile-field"><div class="profile-label">Graduation Year</div>
