@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recruiting Tracker">
+<meta name="theme-color" content="#1a365d">
 <title>College Athletic Recruiting Tracker</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
 <style>
@@ -758,7 +762,8 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       <div class="form-group">
         <label class="form-label">High School</label>
         <input id="ob-hs" class="form-input" type="text" placeholder="e.g., John F. Kennedy High School, Los Angeles, CA"
-               autocomplete="off" oninput="hsInputSearch(this)">
+               autocomplete="off"
+               oninput="hsInputSearch(this)">
         <div id="hs-suggestions" style="display:none"></div>
         <p style="font-size:11px;color:#a0aec0;margin-top:4px">Can't find your school? Just type the full name — it will be saved as entered.</p>
       </div>
@@ -785,16 +790,14 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
         <p class="form-hint">Type or select a sport — it will be added automatically.</p>
         <div style="margin-top:10px">
           <div class="sport-add-row">
-            <input id="ob-sport-inp" class="form-input" type="text" placeholder="Type a sport name…"
-                   autocomplete="off"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();wizardAddSport()}"
-                   oninput="sportDropdownFilter(this)"
-                   onfocus="sportDropdownFilter(this)">
-            <button class="btn-add-sport" onclick="wizardAddSport()">Add</button>
+            <input id="ob-sport-inp" class="form-input" type="text" placeholder="Tap to choose a sport…"
+                   autocomplete="off" readonly
+                   onclick="openPicker('Select Sport',ALL_SPORTS,v=>{el('ob-sport-inp').value=v;wizardAddSport();})">
+            <button class="btn-add-sport" onclick="openPicker('Select Sport',ALL_SPORTS,v=>{el('ob-sport-inp').value=v;wizardAddSport();})">Add</button>
           </div>
           <div id="sport-suggestions" style="display:none"></div>
         </div>
-        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Tap the field to see all sports, or type to filter. Press Enter or tap a sport to add it.</p>
+        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Tap the field or Add button to browse all sports and select one.</p>
         <div id="ob-sport-tags" class="sport-tags"></div>
       </div>
       <div class="wizard-btns">
@@ -998,11 +1001,10 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       <label class="form-label">Sports</label>
       <div>
         <div class="sport-add-row">
-          <input id="set-sport-inp" class="form-input" autocomplete="off" type="text" placeholder="Add another sport…"
-                 oninput="sportDropdownFilter(this,'set-sport-sugg','settingsAddSport')"
-                 onfocus="sportDropdownFilter(this,'set-sport-sugg','settingsAddSport')"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();settingsAddSport();hideSportDropdown('set-sport-sugg')}">
-          <button class="btn-add-sport" onclick="settingsAddSport();hideSportDropdown('set-sport-sugg')">Add</button>
+          <input id="set-sport-inp" class="form-input" autocomplete="off" type="text" placeholder="Tap to choose a sport…"
+                 readonly
+                 onclick="openPicker('Select Sport',ALL_SPORTS,v=>{el('set-sport-inp').value=v;settingsAddSport();})">
+          <button class="btn-add-sport" onclick="openPicker('Select Sport',ALL_SPORTS,v=>{el('set-sport-inp').value=v;settingsAddSport();})">Add</button>
         </div>
         <div id="set-sport-sugg" style="display:none"></div>
       </div>
@@ -6825,8 +6827,28 @@ function removeWizSport(s){wizSports=wizSports.filter(x=>x!==s);renderWizSportTa
 function renderWizSportTags(){
   el('ob-sport-tags').innerHTML=wizSports.map(s=>`<span class="sport-tag">${h(s)}<button onclick="removeWizSport('${h(s)}')" title="Remove">✕</button></span>`).join('');
 }
-function initSportDatalist(){/* datalist replaced by custom dropdown — no-op */}
+function initSportDatalist(){/* datalist replaced by picker sheet — no-op */}
 function hideSportDropdown(id){const w=document.getElementById(id||'sport-suggestions');if(w)w.style.display='none';}
+
+// ── BOTTOM-SHEET PICKER ────────────────────────────────────────────────────
+let _pickerCb=null,_pickerItems=[];
+function openPicker(title,items,callback){
+  _pickerCb=callback;_pickerItems=items||[];
+  el('picker-title').textContent=title;
+  el('picker-search').value='';
+  filterPickerList('');
+  el('picker-overlay').style.display='block';
+  // Focus the search input after a short delay so the sheet animates in first
+  setTimeout(()=>{try{el('picker-search').focus();}catch(e){}},120);
+}
+function closePicker(){el('picker-overlay').style.display='none';_pickerCb=null;}
+function filterPickerList(q){
+  const query=(q||'').toLowerCase();
+  const matches=query?_pickerItems.filter(s=>s.toLowerCase().includes(query)).slice(0,60):_pickerItems.slice(0,80);
+  el('picker-list').innerHTML=matches.map(s=>`<button type="button" onclick="selectPickerItem(${JSON.stringify(s)})" style="display:block;width:100%;text-align:left;padding:14px 18px;border:none;border-bottom:1px solid #f0f4f8;background:white;color:#1a202c;font-size:15px;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:rgba(42,74,127,0.1)">${h(s)}</button>`).join('');
+}
+function selectPickerItem(v){if(_pickerCb)_pickerCb(v);closePicker();}
+// ─────────────────────────────────────────────────────────────────────────
 function sportDropdownFilter(inp, suggId, addFn){
   const wrapId=suggId||'sport-suggestions';
   const wrap=document.getElementById(wrapId);if(!wrap)return;
@@ -8407,6 +8429,22 @@ document.addEventListener('click',function(e){
     <div class="auth-footer">
       <button class="auth-link" id="forgot-link" onclick="authForgot()">Forgot password?</button>
     </div>
+  </div>
+</div>
+
+<!-- ── BOTTOM-SHEET PICKER (iOS-native pattern, no keyboard conflicts) ── -->
+<div id="picker-overlay" onclick="closePicker()" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.45);-webkit-tap-highlight-color:transparent">
+  <div id="picker-sheet" onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:white;border-radius:18px 18px 0 0;max-height:72vh;display:flex;flex-direction:column;box-shadow:0 -6px 32px rgba(0,0,0,.22);padding-bottom:env(safe-area-inset-bottom,0)">
+    <div style="padding:14px 16px 10px;border-bottom:1px solid #e2e8f0">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span id="picker-title" style="flex:1;font-weight:700;font-size:15px;color:#1e3a5f"></span>
+        <button type="button" onclick="closePicker()" style="background:none;border:none;width:28px;height:28px;border-radius:50%;background:#f0f4f8;color:#4a5568;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+      </div>
+      <input id="picker-search" type="text" placeholder="Search…" autocomplete="off" autocorrect="off" autocapitalize="off"
+             style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:16px;outline:none;font-family:inherit;color:#1a202c"
+             oninput="filterPickerList(this.value)">
+    </div>
+    <div id="picker-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;overscroll-behavior:contain"></div>
   </div>
 </div>
 </body>
