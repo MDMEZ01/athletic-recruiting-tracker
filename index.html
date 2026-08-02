@@ -244,13 +244,13 @@ input.cell-input:focus{outline:none;border-color:#4299e1;box-shadow:0 0 0 2px rg
 .profile-card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .profile-card h3{font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:14px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;display:flex;align-items:center;gap:8px;letter-spacing:.3px}
 .profile-card{border-top:3px solid transparent}
-.profile-card:nth-child(2){border-top-color:#2a4a7f}
-.profile-card:nth-child(3){border-top-color:#16a34a}
-.profile-card:nth-child(4){border-top-color:#7c3aed}
+.profile-card:nth-child(2){border-top-color:#1e3a5f}
+.profile-card:nth-child(3){border-top-color:#2563eb}
+.profile-card:nth-child(4){border-top-color:#0284c7}
 .profile-card:nth-child(5){border-top-color:#0891b2}
-.profile-card:nth-child(6){border-top-color:#ea580c}
-.profile-card:nth-child(7){border-top-color:#db2777}
-.profile-card:nth-child(8){border-top-color:#65a30d}
+.profile-card:nth-child(6){border-top-color:#0e7490}
+.profile-card:nth-child(7){border-top-color:#1d4ed8}
+.profile-card:nth-child(8){border-top-color:#3b82f6}
 .profile-field{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid #f7fafc}
 .profile-field:last-child{border-bottom:none}
 .profile-label{width:170px;flex-shrink:0;font-size:13px;font-weight:600;color:#2d3748;padding-top:8px}
@@ -743,7 +743,7 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
 <!-- ONBOARDING WIZARD -->
 <div id="onboarding-overlay" class="modal-overlay hidden">
   <div class="modal-box">
-    <div class="modal-logo">🏆</div>
+    <div class="modal-logo"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#2a4a7f" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block"><path d="M6 2h12v7a6 6 0 0 1-12 0V2z"/><path d="M6 5H3.5A1.5 1.5 0 0 0 2 6.5v0A1.5 1.5 0 0 0 3.5 8H6"/><path d="M18 5h2.5A1.5 1.5 0 0 1 22 6.5v0A1.5 1.5 0 0 1 20.5 8H18"/><path d="M12 15v4"/><path d="M8 19h8"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
     <h2 class="modal-title">College Athletic Recruiting Tracker</h2>
     <p class="modal-subtitle">Let's personalize your tracker. It only takes a minute.</p>
     <div class="wizard-steps">
@@ -1881,7 +1881,7 @@ function hsInputSearch(inp, suggId){
   const matches=known.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
   if(!matches.length){wrap.style.display='none';return;}
   wrap.style.display='block';
-  wrap.innerHTML=matches.map(s=>`<div onmousedown="event.preventDefault();selectHS(${JSON.stringify(s)},${JSON.stringify(inp.id)},${JSON.stringify(suggId||'hs-suggestions')})" style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f4f8" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
+  wrap.innerHTML=matches.map(s=>`<div onmousedown="event.preventDefault();selectHS(${JSON.stringify(s)},${JSON.stringify(inp.id)},${JSON.stringify(suggId||'hs-suggestions')})" ontouchstart="event.preventDefault();selectHS(${JSON.stringify(s)},${JSON.stringify(inp.id)},${JSON.stringify(suggId||'hs-suggestions')})" style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f4f8" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
 }
 function selectHS(name, inputId, suggId){
   const inp=document.getElementById(inputId||'ob-hs');
@@ -3048,7 +3048,7 @@ function sportDropdownFilter(inp, suggId, addFn){
   if(!matches.length){wrap.style.display='none';return;}
   wrap.style.display='block';
   const addFunc=addFn||'wizardAddSport';
-  wrap.innerHTML=matches.map(s=>`<div onmousedown="event.preventDefault();el('${inp.id}').value=${JSON.stringify(s)};${addFunc}();hideSportDropdown('${wrapId}')" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f4f8" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
+  wrap.innerHTML=matches.map(s=>`<div onmousedown="event.preventDefault();el('${inp.id}').value=${JSON.stringify(s)};${addFunc}();hideSportDropdown('${wrapId}')" ontouchstart="event.preventDefault();el('${inp.id}').value=${JSON.stringify(s)};${addFunc}();hideSportDropdown('${wrapId}')" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f4f8" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
 }
 // Close sport dropdown on outside tap
 document.addEventListener('click',function(e){
@@ -4589,7 +4589,7 @@ document.addEventListener('click',function(e){
 <!-- ── SUPABASE AUTH OVERLAY ─────────────────────────────── -->
 <div id="auth-overlay">
   <div class="auth-box">
-    <div class="auth-logo">🏆 Recruiting Tracker</div>
+    <div class="auth-logo"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2a4a7f" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:8px;margin-bottom:2px"><path d="M6 2h12v7a6 6 0 0 1-12 0V2z"/><path d="M6 5H3.5A1.5 1.5 0 0 0 2 6.5v0A1.5 1.5 0 0 0 3.5 8H6"/><path d="M18 5h2.5A1.5 1.5 0 0 1 22 6.5v0A1.5 1.5 0 0 1 20.5 8H18"/><path d="M12 15v4"/><path d="M8 19h8"/><line x1="8" y1="22" x2="16" y2="22"/></svg>Recruiting Tracker</div>
     <div class="auth-sub" id="auth-sub">Sign in to access your personalized recruiting tracker</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login" onclick="authSwitchTab('login')">Sign In</button>
