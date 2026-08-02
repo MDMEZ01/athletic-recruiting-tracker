@@ -325,8 +325,8 @@ input.cell-input:focus{outline:none;border-color:#4299e1;box-shadow:0 0 0 2px rg
 .region-check-item.checked{border-color:#2a4a7f;background:#eff4ff;color:#1e3a5f;font-weight:700}
 .region-check-item input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:#2a4a7f;flex-shrink:0}
 .sport-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.sport-tag{display:flex;align-items:center;gap:5px;background:#ebf4ff;border:1px solid #bee3f8;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:#2b6cb0}
-.sport-tag button{background:none;border:none;cursor:pointer;color:#718096;font-size:13px;padding:0;line-height:1;font-weight:700}
+.sport-tag{display:flex;align-items:center;gap:6px;background:#ebf4ff;border:1px solid #bee3f8;border-radius:20px;padding:8px 16px;font-size:16px;font-weight:600;color:#2b6cb0}
+.sport-tag button{background:none;border:none;cursor:pointer;color:#718096;font-size:16px;padding:0;line-height:1;font-weight:700}
 .sport-tag button:hover{color:#e53e3e}
 .sport-add-row{display:flex;gap:8px;margin-top:8px}
 .sport-add-row .form-input{flex:1}
@@ -762,7 +762,7 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       <div class="form-group">
         <label class="form-label">High School</label>
         <input id="ob-hs" class="form-input" type="text" placeholder="Type your high school name…"
-               autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+               autocorrect="off" autocapitalize="words" spellcheck="false" list="hs-datalist">
         <p style="font-size:11px;color:#a0aec0;margin-top:4px">Type your high school name exactly as it appears.</p>
       </div>
       <div class="form-row">
@@ -790,8 +790,18 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
           <select id="ob-sport-sel" class="form-select" onchange="wizardSelectSport(this)">
             <option value="">— Tap to choose a sport —</option>
           </select>
+          <div id="ob-sport-other-wrap" style="display:none;margin-top:8px">
+            <label class="form-label" style="font-size:12px;margin-bottom:4px">Type your sport name:</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="ob-sport-other-inp" class="form-input" placeholder="e.g. Korfball, Padel…"
+                     autocorrect="off" autocapitalize="words" spellcheck="false"
+                     style="flex:1;margin-bottom:0"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault();wizardAddOtherSport();}">
+              <button type="button" class="btn-wiz-next" style="padding:10px 18px;font-size:14px;border-radius:8px;white-space:nowrap" onclick="wizardAddOtherSport()">Add</button>
+            </div>
+          </div>
         </div>
-        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Tap the menu above to pick a sport — it will be added to your list.</p>
+        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Tap the menu above to pick a sport. Choose "Other" to type a custom sport.</p>
         <div id="ob-sport-tags" class="sport-tags"></div>
       </div>
       <div class="wizard-btns">
@@ -979,7 +989,7 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       <button class="btn-modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="form-group"><label class="form-label">Athlete Name</label><input id="set-name" class="form-input" type="text"></div>
-    <div class="form-group"><label class="form-label">High School</label><input id="set-hs" class="form-input" type="text" placeholder="Type your high school name…" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"></div>
+    <div class="form-group"><label class="form-label">High School</label><input id="set-hs" class="form-input" type="text" placeholder="Type your high school name…" autocorrect="off" autocapitalize="words" spellcheck="false" list="hs-datalist"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Graduation Year</label><select id="set-year" class="form-select"></select></div>
       <div class="form-group"><label class="form-label">Competing As</label>
@@ -6425,6 +6435,22 @@ window._hsKnown=[
   'York High School, Elmhurst, IL',
   'Zionsville Community High School, Zionsville, IN',
   'duPont Manual High School, Louisville, KY',
+  // Los Angeles independent / private schools
+  'Archer School for Girls, Los Angeles, CA',
+  'Brentwood School, Los Angeles, CA',
+  'Campbell Hall, North Hollywood, CA',
+  'Crossroads School, Santa Monica, CA',
+  'Marlborough School, Los Angeles, CA',
+  'New Roads School, Santa Monica, CA',
+  'Notre Dame High School, Sherman Oaks, CA',
+  'Oakwood School, North Hollywood, CA',
+  'Polytechnic School, Pasadena, CA',
+  // Ohio — Cleveland / Shaker Heights area
+  'Hathaway Brown School, Shaker Heights, OH',
+  'Hawken School, Chesterland, OH',
+  'Laurel School, Shaker Heights, OH',
+  'Shaker Heights High School, Shaker Heights, OH',
+  'University School, Hunting Valley, OH',
 ];
 
 // ── Comprehensive sports list (NCAA + Olympic, alphabetized) ─────────────────
@@ -6821,10 +6847,28 @@ function buildSportSelect(selId){
 function initSportDatalist(){
   buildSportSelect('ob-sport-sel');
   buildSportSelect('set-sport-sel');
+  // Populate native HS datalist for autocomplete
+  const dl=document.getElementById('hs-datalist');
+  if(dl&&window._hsKnown){
+    dl.innerHTML=(window._hsKnown||[]).map(s=>`<option value="${s.replace(/"/g,'&quot;')}">`).join('');
+  }
 }
 function wizardSelectSport(sel){
   const val=sel.value;sel.value='';
   if(!val)return;
+  if(val==='Other'){
+    const wrap=el('ob-sport-other-wrap');
+    if(wrap){wrap.style.display='block';const inp=el('ob-sport-other-inp');if(inp){inp.value='';inp.focus();}}
+    return;
+  }
+  if(wizSports.includes(val)){showToast('Already added');return;}
+  wizSports.push(val);renderWizSportTags();
+}
+function wizardAddOtherSport(){
+  const inp=el('ob-sport-other-inp');if(!inp)return;
+  const val=inp.value.trim();if(!val)return;
+  const wrap=el('ob-sport-other-wrap');if(wrap)wrap.style.display='none';
+  inp.value='';
   if(wizSports.includes(val)){showToast('Already added');return;}
   wizSports.push(val);renderWizSportTags();
 }
@@ -7886,8 +7930,8 @@ function renderProfile(){
         <div style="flex:1">
           <div style="position:relative">
             <input class="profile-input" type="text" id="pr-highschool" value="${h(cfg.highSchool||'')}" placeholder="Type your high school name…"
-                   autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" style="width:100%"
-                   onchange="updateConfigField('highSchool',this.value)">
+                   autocorrect="off" autocapitalize="words" spellcheck="false" style="width:100%"
+                   list="hs-datalist" onchange="updateConfigField('highSchool',this.value)">
           </div>
           <small style="font-size:11px;color:#a0aec0;padding-left:2px">Start typing to see suggestions, or type any school name. You can update this if you transfer schools.</small>
         </div>
@@ -8438,6 +8482,7 @@ document.addEventListener('click',function(e){
 </div>
 
 <!-- ── BOTTOM-SHEET PICKER (iOS-native pattern, no keyboard conflicts) ── -->
+<datalist id="hs-datalist"></datalist>
 <div id="picker-overlay" onclick="closePicker()" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.45);-webkit-tap-highlight-color:transparent">
   <div id="picker-sheet" onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:white;border-radius:18px 18px 0 0;max-height:72vh;display:flex;flex-direction:column;box-shadow:0 -6px 32px rgba(0,0,0,.22);padding-bottom:env(safe-area-inset-bottom,0)">
     <div style="padding:14px 16px 10px;border-bottom:1px solid #e2e8f0">
