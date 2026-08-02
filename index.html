@@ -759,7 +759,7 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
         <label class="form-label">High School</label>
         <input id="ob-hs" class="form-input" type="text" placeholder="e.g., John F. Kennedy High School, Los Angeles, CA"
                autocomplete="off" oninput="hsInputSearch(this)">
-        <div id="hs-suggestions" style="display:none;position:relative;z-index:200;background:white;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.12);margin-top:2px;max-height:200px;overflow-y:auto"></div>
+        <div id="hs-suggestions" style="display:none"></div>
         <p style="font-size:11px;color:#a0aec0;margin-top:4px">Can't find your school? Just type the full name — it will be saved as entered.</p>
       </div>
       <div class="form-row">
@@ -792,7 +792,7 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
                    onfocus="sportDropdownFilter(this)">
             <button class="btn-add-sport" onclick="wizardAddSport()">Add</button>
           </div>
-          <div id="sport-suggestions" style="display:none;position:relative;z-index:200;background:white;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.12);margin-top:2px;max-height:220px;overflow-y:auto"></div>
+          <div id="sport-suggestions" style="display:none"></div>
         </div>
         <p style="font-size:11px;color:#a0aec0;margin-top:4px">Tap the field to see all sports, or type to filter. Press Enter or tap a sport to add it.</p>
         <div id="ob-sport-tags" class="sport-tags"></div>
@@ -1004,7 +1004,7 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
                  onkeydown="if(event.key==='Enter'){event.preventDefault();settingsAddSport();hideSportDropdown('set-sport-sugg')}">
           <button class="btn-add-sport" onclick="settingsAddSport();hideSportDropdown('set-sport-sugg')">Add</button>
         </div>
-        <div id="set-sport-sugg" style="display:none;position:relative;z-index:200;background:white;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.12);margin-top:2px;max-height:200px;overflow-y:auto"></div>
+        <div id="set-sport-sugg" style="display:none"></div>
       </div>
       <div id="set-sport-tags" class="sport-tags"></div>
     </div>
@@ -5655,16 +5655,22 @@ const IC_UNKNOWN = {bg:'#cbd5e0',row:'rgba(0,0,0,.03)',sticky:'#f7fafc',left:'#c
 const HS_COMMON_WORDS=['High School','HS','Academy','Preparatory','Prep','Institute','Charter'];
 function hsInputSearch(inp, suggId){
   const val=inp.value.trim();
-  const wrap=document.getElementById(suggId||'hs-suggestions');
+  const wrapId=suggId||'hs-suggestions';
+  const wrap=document.getElementById(wrapId);
   if(!wrap)return;
   if(val.length<3){wrap.style.display='none';return;}
-  // Build suggestions from any stored known schools + pattern match
   const known=(window._hsKnown||[]);
   const q=val.toLowerCase();
   const matches=known.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
   if(!matches.length){wrap.style.display='none';return;}
+  // Use position:fixed so the list escapes overflow:auto parents (critical for iOS Safari)
+  const rect=inp.getBoundingClientRect();
+  Object.assign(wrap.style,{position:'fixed',left:rect.left+'px',top:(rect.bottom+2)+'px',
+    width:rect.width+'px',zIndex:'9999',maxHeight:'200px',overflowY:'auto',
+    background:'white',border:'1px solid #e2e8f0',borderRadius:'6px',
+    boxShadow:'0 4px 12px rgba(0,0,0,.18)'});
   wrap.style.display='block';
-  wrap.innerHTML=matches.map(s=>`<button type="button" onclick="selectHS(${JSON.stringify(s)},${JSON.stringify(inp.id)},${JSON.stringify(suggId||'hs-suggestions')})" style="display:block;width:100%;text-align:left;padding:9px 12px;cursor:pointer;font-size:13px;border:none;border-bottom:1px solid #f0f4f8;background:white;color:#1a202c;font-family:inherit" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background='white'">${h(s)}</button>`).join('');
+  wrap.innerHTML=matches.map(s=>`<button type="button" onclick="selectHS(${JSON.stringify(s)},${JSON.stringify(inp.id)},${JSON.stringify(wrapId)})" style="display:block;width:100%;text-align:left;padding:11px 12px;cursor:pointer;font-size:14px;border:none;border-bottom:1px solid #f0f4f8;background:white;color:#1a202c;font-family:inherit;-webkit-tap-highlight-color:rgba(0,0,0,0.1)" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background='white'">${h(s)}</button>`).join('');
 }
 function selectHS(name, inputId, suggId){
   const inp=document.getElementById(inputId||'ob-hs');
@@ -6813,7 +6819,7 @@ function wizardAddSport(){
   const inp=el('ob-sport-inp');const val=inp.value.trim();if(!val)return;
   hideSportDropdown('sport-suggestions');
   if(wizSports.includes(val)){showToast('Already added');inp.value='';return;}
-  wizSports.push(val);renderWizSportTags();inp.value='';inp.focus();
+  wizSports.push(val);renderWizSportTags();inp.value='';
 }
 function removeWizSport(s){wizSports=wizSports.filter(x=>x!==s);renderWizSportTags();}
 function renderWizSportTags(){
@@ -6829,9 +6835,15 @@ function sportDropdownFilter(inp, suggId, addFn){
     ?ALL_SPORTS.slice(0,30)
     :ALL_SPORTS.filter(s=>s.toLowerCase().includes(val)).slice(0,20);
   if(!matches.length){wrap.style.display='none';return;}
+  // Use position:fixed so the list escapes overflow:auto parents (critical for iOS Safari)
+  const rect=inp.getBoundingClientRect();
+  Object.assign(wrap.style,{position:'fixed',left:rect.left+'px',top:(rect.bottom+2)+'px',
+    width:rect.width+'px',zIndex:'9999',maxHeight:'220px',overflowY:'auto',
+    background:'white',border:'1px solid #e2e8f0',borderRadius:'6px',
+    boxShadow:'0 4px 12px rgba(0,0,0,.18)'});
   wrap.style.display='block';
   const addFunc=addFn||'wizardAddSport';
-  wrap.innerHTML=matches.map(s=>`<button type="button" onclick="el('${inp.id}').value=${JSON.stringify(s)};${addFunc}();hideSportDropdown('${wrapId}')" style="display:block;width:100%;text-align:left;padding:10px 14px;cursor:pointer;font-size:13px;border:none;border-bottom:1px solid #f0f4f8;background:white;color:#1a202c;font-family:inherit" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background='white'">${h(s)}</button>`).join('');
+  wrap.innerHTML=matches.map(s=>`<button type="button" onclick="el('${inp.id}').value=${JSON.stringify(s)};${addFunc}();hideSportDropdown('${wrapId}')" style="display:block;width:100%;text-align:left;padding:11px 14px;cursor:pointer;font-size:14px;border:none;border-bottom:1px solid #f0f4f8;background:white;color:#1a202c;font-family:inherit;-webkit-tap-highlight-color:rgba(0,0,0,0.1)" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background='white'">${h(s)}</button>`).join('');
 }
 // Close sport dropdown on outside tap
 document.addEventListener('click',function(e){
@@ -7848,7 +7860,7 @@ function renderProfile(){
                    oninput="hsInputSearch(this,'pr-hs-sugg');updateConfigField('highSchool',this.value)"
                    onchange="updateConfigField('highSchool',this.value)"
                    style="width:100%">
-            <div id="pr-hs-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:200;background:white;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:200px;overflow-y:auto"></div>
+            <div id="pr-hs-sugg" style="display:none"></div>
           </div>
           <small style="font-size:11px;color:#a0aec0;padding-left:2px">Start typing to see suggestions, or type any school name. You can update this if you transfer schools.</small>
         </div>
