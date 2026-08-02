@@ -761,11 +761,9 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       </div>
       <div class="form-group">
         <label class="form-label">High School</label>
-        <input id="ob-hs" class="form-input" type="text" placeholder="Tap to search for your high school…"
-               autocomplete="off" readonly
-               onpointerdown="event.preventDefault();openPicker('Your High School',window._hsKnown||[],v=>{el('ob-hs').value=v},true,el('ob-hs').value||'')">
-        <div id="hs-suggestions" style="display:none"></div>
-        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Can't find your school? Just type the full name — it will be saved as entered.</p>
+        <input id="ob-hs" class="form-input" type="text" placeholder="Type your high school name…"
+               autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Type your high school name exactly as it appears.</p>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -789,11 +787,11 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
         <label class="form-label">Sport(s)</label>
         <p class="form-hint">Type or select a sport — it will be added automatically.</p>
         <div style="margin-top:10px">
-          <input type="hidden" id="ob-sport-inp">
-          <button type="button" class="btn-add-sport" style="width:100%;justify-content:center;padding:11px 14px;font-size:14px;border-radius:8px;margin-bottom:2px" onclick="openPicker('Select Sport',ALL_SPORTS,v=>{el('ob-sport-inp').value=v;wizardAddSport();})">+ Add Sport</button>
-          <div id="sport-suggestions" style="display:none"></div>
+          <select id="ob-sport-sel" class="form-select" onchange="wizardSelectSport(this)">
+            <option value="">— Tap to choose a sport —</option>
+          </select>
         </div>
-        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Tap the field or Add button to browse all sports and select one.</p>
+        <p style="font-size:11px;color:#a0aec0;margin-top:4px">Tap the menu above to pick a sport — it will be added to your list.</p>
         <div id="ob-sport-tags" class="sport-tags"></div>
       </div>
       <div class="wizard-btns">
@@ -981,7 +979,7 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
       <button class="btn-modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="form-group"><label class="form-label">Athlete Name</label><input id="set-name" class="form-input" type="text"></div>
-    <div class="form-group"><label class="form-label">High School</label><input id="set-hs" class="form-input" type="text" placeholder="Tap to search for your high school…" autocomplete="off" readonly style="cursor:pointer" onpointerdown="event.preventDefault();openPicker('Your High School',window._hsKnown||[],v=>{el('set-hs').value=v},true,el('set-hs').value||'')"></div>
+    <div class="form-group"><label class="form-label">High School</label><input id="set-hs" class="form-input" type="text" placeholder="Type your high school name…" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Graduation Year</label><select id="set-year" class="form-select"></select></div>
       <div class="form-group"><label class="form-label">Competing As</label>
@@ -996,11 +994,9 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
     <div class="form-group">
       <label class="form-label">Sports</label>
       <div>
-        <div class="sport-add-row">
-          <input type="hidden" id="set-sport-inp">
-          <button type="button" class="btn-add-sport" style="width:100%;justify-content:center;padding:10px 14px;font-size:14px;border-radius:8px" onclick="openPicker('Select Sport',ALL_SPORTS,v=>{el('set-sport-inp').value=v;settingsAddSport();})">+ Add Sport</button>
-        </div>
-        <div id="set-sport-sugg" style="display:none"></div>
+          <select id="set-sport-sel" class="form-select" onchange="settingsSelectSport(this)">
+            <option value="">— Tap to choose a sport —</option>
+          </select>
       </div>
       <div id="set-sport-tags" class="sport-tags"></div>
     </div>
@@ -6811,17 +6807,33 @@ function wizardBack(){if(wizStep>0)wizStep--;updateWizardUI();}
 function updateWizardUI(){
   for(let i=0;i<4;i++){el('wp'+i).className='wizard-page'+(i===wizStep?' active':'');el('ws'+i).className='ws'+(i<wizStep?' done':i===wizStep?' active':'');}
 }
-function wizardAddSport(){
-  const inp=el('ob-sport-inp');const val=inp.value.trim();if(!val)return;
-  hideSportDropdown('sport-suggestions');
-  if(wizSports.includes(val)){showToast('Already added');inp.value='';return;}
-  wizSports.push(val);renderWizSportTags();inp.value='';
-}
+function wizardAddSport(){/* replaced by wizardSelectSport() */}
 function removeWizSport(s){wizSports=wizSports.filter(x=>x!==s);renderWizSportTags();}
 function renderWizSportTags(){
   el('ob-sport-tags').innerHTML=wizSports.map(s=>`<span class="sport-tag">${h(s)}<button onclick="removeWizSport('${h(s)}')" title="Remove">✕</button></span>`).join('');
 }
-function initSportDatalist(){/* datalist replaced by picker sheet — no-op */}
+function buildSportSelect(selId){
+  const sel=el(selId);if(!sel)return;
+  // Keep first placeholder option, rebuild the rest
+  while(sel.options.length>1)sel.remove(1);
+  ALL_SPORTS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+}
+function initSportDatalist(){
+  buildSportSelect('ob-sport-sel');
+  buildSportSelect('set-sport-sel');
+}
+function wizardSelectSport(sel){
+  const val=sel.value;sel.value='';
+  if(!val)return;
+  if(wizSports.includes(val)){showToast('Already added');return;}
+  wizSports.push(val);renderWizSportTags();
+}
+function settingsSelectSport(sel){
+  const val=sel.value;sel.value='';
+  if(!val)return;
+  if(!setsSports.includes(val))setsSports.push(val);
+  renderSetSportTags();
+}
 function hideSportDropdown(id){const w=document.getElementById(id||'sport-suggestions');if(w)w.style.display='none';}
 
 // ── BOTTOM-SHEET PICKER ────────────────────────────────────────────────────
@@ -7873,10 +7885,9 @@ function renderProfile(){
       <div class="profile-field"><div class="profile-label">High School</div>
         <div style="flex:1">
           <div style="position:relative">
-            <input class="profile-input" type="text" id="pr-highschool" value="${h(cfg.highSchool||'')}" placeholder="Tap to search for your high school…"
-                   autocomplete="off" readonly style="width:100%;cursor:pointer"
-                   onpointerdown="event.preventDefault();openPicker('Your High School',window._hsKnown||[],v=>{el('pr-highschool').value=v;updateConfigField('highSchool',v)},true,el('pr-highschool').value||'')">
-            <div id="pr-hs-sugg" style="display:none"></div>
+            <input class="profile-input" type="text" id="pr-highschool" value="${h(cfg.highSchool||'')}" placeholder="Type your high school name…"
+                   autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" style="width:100%"
+                   onchange="updateConfigField('highSchool',this.value)">
           </div>
           <small style="font-size:11px;color:#a0aec0;padding-left:2px">Start typing to see suggestions, or type any school name. You can update this if you transfer schools.</small>
         </div>
@@ -8241,7 +8252,7 @@ function openSettings(){
   el('settings-overlay').classList.remove('hidden');
 }
 function closeSettings(){el('settings-overlay').classList.add('hidden');}
-function settingsAddSport(){const inp=el('set-sport-inp');const val=inp.value.trim();if(!val)return;hideSportDropdown('set-sport-sugg');if(!setsSports.includes(val))setsSports.push(val);renderSetSportTags();inp.value='';}
+function settingsAddSport(){/* replaced by settingsSelectSport() */}
 function removeSetSport(s){setsSports=setsSports.filter(x=>x!==s);renderSetSportTags();}
 function renderSetSportTags(){el('set-sport-tags').innerHTML=setsSports.map(s=>`<span class="sport-tag">${h(s)}<button onclick="removeSetSport('${h(s)}')" title="Remove">✕</button></span>`).join('');}
 function saveSettings(){
