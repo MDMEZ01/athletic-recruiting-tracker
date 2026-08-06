@@ -6764,7 +6764,7 @@ function init(){
 }
 function setCopyright(){
   const yr=new Date().getFullYear();
-  el('copyright-line').textContent=`© ${yr} Verum Ventus. All Rights Reserved.`;
+  el('copyright-line').textContent=`© ${yr} Verum Ventus LLC. All Rights Reserved.`;
 }
 function buildYearSelect(selId){
   const sel=el(selId);if(!sel)return;
@@ -6897,7 +6897,7 @@ function openPicker(title,items,callback,allowCustom,preQuery){
   el('picker-title').textContent=title;
   el('picker-search').value=preQuery||'';
   filterPickerList(preQuery||'');
-  el('picker-overlay').style.display='block';
+  el('picker-overlay').style.display='flex';
   setTimeout(()=>{try{el('picker-search').focus();}catch(e){}},150);
 }
 function closePicker(){el('picker-overlay').style.display='none';_pickerCb=null;}
@@ -8504,21 +8504,22 @@ document.addEventListener('click',function(e){
   </div>
 </div>
 
-<!-- ── BOTTOM-SHEET PICKER (iOS-native pattern, no keyboard conflicts) ── -->
+<!-- ── FULL-SCREEN PICKER (top-anchored so keyboard never covers search) ── -->
 <datalist id="hs-datalist"></datalist>
-<div id="picker-overlay" onclick="closePicker()" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.45);-webkit-tap-highlight-color:transparent">
-  <div id="picker-sheet" onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:white;border-radius:18px 18px 0 0;max-height:72vh;display:flex;flex-direction:column;box-shadow:0 -6px 32px rgba(0,0,0,.22);padding-bottom:env(safe-area-inset-bottom,0)">
-    <div style="padding:14px 16px 10px;border-bottom:1px solid #e2e8f0">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span id="picker-title" style="flex:1;font-weight:700;font-size:15px;color:#1e3a5f"></span>
-        <button type="button" onclick="closePicker()" style="background:none;border:none;width:28px;height:28px;border-radius:50%;background:#f0f4f8;color:#4a5568;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
-      </div>
-      <input id="picker-search" type="text" placeholder="Search…" autocomplete="off" autocorrect="off" autocapitalize="off"
-             style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:16px;outline:none;font-family:inherit;color:#1a202c"
-             oninput="filterPickerList(this.value)">
-    </div>
-    <div id="picker-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;overscroll-behavior:contain"></div>
+<div id="picker-overlay" style="display:none;position:fixed;inset:0;z-index:10001;background:white;flex-direction:column">
+  <!-- Header: title + Cancel — always visible above keyboard -->
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#1e3a5f;flex-shrink:0;padding-top:max(14px,env(safe-area-inset-top,14px))">
+    <span id="picker-title" style="flex:1;font-weight:700;font-size:16px;color:white"></span>
+    <button type="button" onclick="closePicker()" style="padding:8px 16px;border:none;border-radius:8px;background:rgba(255,255,255,0.2);color:white;font-size:14px;font-weight:600;cursor:pointer;flex-shrink:0">Cancel</button>
   </div>
+  <!-- Search input — stays pinned just below header -->
+  <div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0">
+    <input id="picker-search" type="search" placeholder="Search…" autocomplete="off" autocorrect="off" autocapitalize="off"
+           style="width:100%;padding:11px 14px;border:1px solid #cbd5e0;border-radius:10px;font-size:16px;outline:none;font-family:inherit;color:#1a202c;background:white;box-sizing:border-box"
+           oninput="filterPickerList(this.value)">
+  </div>
+  <!-- Scrollable list — keyboard shrinks this area, not the search -->
+  <div id="picker-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;overscroll-behavior:contain"></div>
 </div>
 </body>
 </html>
