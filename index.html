@@ -6890,17 +6890,40 @@ function settingsSelectSport(sel){
 }
 function hideSportDropdown(id){const w=document.getElementById(id||'sport-suggestions');if(w)w.style.display='none';}
 
-// ── BOTTOM-SHEET PICKER ────────────────────────────────────────────────────
+// ── FULL-SCREEN PICKER ────────────────────────────────────────────────────
 let _pickerCb=null,_pickerItems=[],_pickerAllowCustom=false;
+
+// Visual Viewport API: keeps picker confined to the area above the iOS keyboard.
+// Without this, position:fixed uses the layout viewport (full screen height)
+// so the bottom half of the picker hides behind the keyboard.
+function _pickerFitViewport(){
+  const ov=el('picker-overlay');if(!ov||ov.style.display==='none')return;
+  if(window.visualViewport){
+    ov.style.top=window.visualViewport.offsetTop+'px';
+    ov.style.height=window.visualViewport.height+'px';
+  }
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',_pickerFitViewport);
+  window.visualViewport.addEventListener('scroll',_pickerFitViewport);
+}
+
 function openPicker(title,items,callback,allowCustom,preQuery){
   _pickerCb=callback;_pickerItems=items||[];_pickerAllowCustom=!!allowCustom;
   el('picker-title').textContent=title;
   el('picker-search').value=preQuery||'';
   filterPickerList(preQuery||'');
-  el('picker-overlay').style.display='flex';
+  const ov=el('picker-overlay');
+  ov.style.top='';ov.style.height='';  // reset before show
+  ov.style.display='flex';
+  _pickerFitViewport();  // snap immediately if keyboard already up
   setTimeout(()=>{try{el('picker-search').focus();}catch(e){}},150);
 }
-function closePicker(){el('picker-overlay').style.display='none';_pickerCb=null;}
+function closePicker(){
+  const ov=el('picker-overlay');
+  ov.style.display='none';ov.style.top='';ov.style.height='';
+  _pickerCb=null;
+}
 function filterPickerList(q){
   const query=(q||'').toLowerCase();
   const matches=query?_pickerItems.filter(s=>s.toLowerCase().includes(query)).slice(0,60):_pickerItems.slice(0,80);
@@ -8506,7 +8529,7 @@ document.addEventListener('click',function(e){
 
 <!-- ── FULL-SCREEN PICKER (top-anchored so keyboard never covers search) ── -->
 <datalist id="hs-datalist"></datalist>
-<div id="picker-overlay" style="display:none;position:fixed;inset:0;z-index:10001;background:white;flex-direction:column">
+<div id="picker-overlay" style="display:none;position:fixed;top:0;left:0;right:0;height:100%;z-index:10001;background:white;flex-direction:column;overflow:hidden">
   <!-- Header: title + Cancel — always visible above keyboard -->
   <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#1e3a5f;flex-shrink:0;padding-top:max(14px,env(safe-area-inset-top,14px))">
     <span id="picker-title" style="flex:1;font-weight:700;font-size:16px;color:white"></span>
