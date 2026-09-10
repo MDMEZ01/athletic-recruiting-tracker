@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>College Athletic Recruiting Tracker</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -296,7 +296,7 @@ input.cell-input:focus{outline:none;border-color:#4299e1;box-shadow:0 0 0 2px rg
 .ws.done{background:#48bb78}.ws.active{background:#2a4a7f}
 .wizard-page{display:none}
 .wizard-page.active{display:block}
-.wizard-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;padding-top:16px;border-top:1px solid #f0f4f8;position:sticky;bottom:0;background:white;z-index:1;}
+.wizard-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;padding-top:16px;padding-bottom:env(safe-area-inset-bottom, 0px);border-top:1px solid #f0f4f8;position:sticky;bottom:0;background:white;z-index:1;}
 .form-group{margin-bottom:14px}
 .form-label{display:block;font-size:11px;font-weight:700;color:#2d3748;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
 .form-hint{font-size:11px;color:#718096;margin-top:3px;line-height:1.4}
@@ -358,7 +358,7 @@ input.cell-input:focus{outline:none;border-color:#4299e1;box-shadow:0 0 0 2px rg
 
 /* ── Footer / Toast / Empty ── */
 footer{text-align:center;padding:12px 16px;font-size:11px;color:#a0aec0;border-top:1px solid #e2e8f0;background:white;margin-top:24px}
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d3748;color:white;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:2000;box-shadow:0 4px 16px rgba(0,0,0,.2);white-space:nowrap}
+#toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);background:#2d3748;color:white;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:2000;box-shadow:0 4px 16px rgba(0,0,0,.2);white-space:nowrap}
 #toast.show{opacity:1}
 .empty-state{text-align:center;padding:60px 20px;color:#a0aec0}
 .empty-state .empty-icon{font-size:40px;margin-bottom:12px}
@@ -369,7 +369,7 @@ footer{text-align:center;padding:12px 16px;font-size:11px;color:#a0aec0;border-t
   header{padding:12px 14px}
   .tracker-bar{padding:8px 12px;gap:6px}
   .filter-btn{padding:4px 10px;font-size:11px}
-  .table-wrap{max-height:calc(100vh - 240px)}
+  .table-wrap{max-height:calc(100vh - 240px);max-height:calc(100dvh - 240px)}
   .form-row{grid-template-columns:1fr}
   .region-checks{grid-template-columns:1fr}
   .cards-grid{grid-template-columns:1fr}
@@ -378,6 +378,9 @@ footer{text-align:center;padding:12px 16px;font-size:11px;color:#a0aec0;border-t
   .dash-grid{grid-template-columns:1fr}
   .modal-box{padding:20px}
   .profile-label{width:130px}
+  /* use dynamic viewport height on iOS 16+ so scrollable sections size correctly */
+  div[style*="max-height:calc(100vh - 120px)"]{max-height:calc(100dvh - 120px)!important}
+  div[style*="max-height:calc(100vh - 150px)"]{max-height:calc(100dvh - 150px)!important}
 }
 @media print{
   .nav-bar,.header-actions,.tracker-bar,.legend,footer,#toast{display:none!important}
@@ -672,12 +675,21 @@ body.theme-prestige .btn-theme-picker{background:rgba(201,162,39,.15);border-col
 
 
 /* ── Export prompt banner ── */
-.export-prompt{position:fixed;bottom:24px;right:20px;background:white;border-radius:12px;box-shadow:0 4px 28px rgba(0,0,0,0.18);padding:16px 18px;max-width:300px;z-index:9500;border-left:4px solid #10b981;animation:slideInRight .35s ease}
+.export-prompt{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));right:20px;background:white;border-radius:12px;box-shadow:0 4px 28px rgba(0,0,0,0.18);padding:16px 18px;max-width:300px;z-index:9500;border-left:4px solid #10b981;animation:slideInRight .35s ease}
 @keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 .btn-export-dl{background:#10b981;color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 .btn-export-dl:hover{background:#059669}
 .btn-export-skip{background:none;border:1px solid #e2e8f0;border-radius:6px;padding:7px 14px;font-size:12px;color:#64748b;cursor:pointer}
-@media(max-width:480px){.export-prompt{left:12px;right:12px;max-width:none;bottom:16px}}
+@media(max-width:480px){.export-prompt{left:12px;right:12px;max-width:none;bottom:calc(16px + env(safe-area-inset-bottom, 0px))}}
+/* iOS safe-area: keep bottom content above home indicator / browser chrome */
+@supports(padding-bottom: env(safe-area-inset-bottom)){
+  /* scrollable tab sections — allow content to scroll fully above iOS chrome */
+  div[style*="overflow-y:auto"]{padding-bottom: env(safe-area-inset-bottom, 0px);}
+  /* inner content wrappers with Save buttons */
+  .profile-wrap,.notes-card,.sched-section,.region-view-wrap,.timeline-wrap,.cards-wrap{padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));}
+  /* modal wizard action row */
+  .wizard-btns{padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));}
+}
 
 /* ── Nav tab color groups ── */
 /* Separator between groups */
@@ -2732,7 +2744,7 @@ function loadState(){
   if(window.__TRACKER_PRELOAD__&&!localStorage.getItem(STORAGE_KEY)){
     try{state=window.__TRACKER_PRELOAD__;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}
   }
-  try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const s=JSON.parse(raw);if(s)state=s;}}catch(e){}
+  try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const s=JSON.parse(raw);if(s)state=s;}else{resetState();}}catch(e){resetState();}
   if(!state.profile)state.profile={};
   if(!state.profile.social)state.profile.social={};
   if(!state.profile.stats)state.profile.stats={};
@@ -2917,9 +2929,13 @@ async function authForgot(){
   el('auth-err').style.color=error?'#e53e3e':'#38a169';
   el('auth-err').textContent=error?error.message:'Password reset email sent — check your inbox.';
 }
+function resetState(){
+  state={config:null,profile:{bio:'',gpa:'',sat:'',act:'',positions:{},accomplishments:[],recruitingUrls:'',videos:'',social:{},stats:{}},schools:[],notes:'',meetings:[],alumni:[],prefAthleteTZ:''};
+}
 async function signOut(){
   await _supa.auth.signOut();
   _supaUser=null;_sessionHandled=false;
+  resetState(); // clear previous athlete's data from memory before next user logs in
   localStorage.removeItem(STORAGE_KEY);
   const lb=el('logout-btn');if(lb)lb.style.display='none';
   el('main-app').style.display='none';
