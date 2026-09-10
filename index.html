@@ -2028,6 +2028,7 @@ window._hsKnown=[
   'Breck School, Minneapolis, MN',
   'Brentwood Academy, Brentwood, TN',
   'Brentwood High School, Brentwood, TN',
+  'Brentwood School, Los Angeles, CA',
   'Brighton High School, Brighton, MI',
   'Brighton High School, Cottonwood Heights, UT',
   'Broken Arrow High School, Broken Arrow, OK',
@@ -2047,6 +2048,7 @@ window._hsKnown=[
   'California High School, San Ramon, CA',
   'Calvert Hall College High School, Towson, MD',
   'Cambridge High School, Milton, GA',
+  'Campbell Hall, North Hollywood, CA',
   'Canal Winchester High School, Canal Winchester, OH',
   'Cape Elizabeth High School, Cape Elizabeth, ME',
   'Caravel Academy, Bear, DE',
@@ -2110,6 +2112,7 @@ window._hsKnown=[
   'Coronado High School, Henderson, NV',
   'Council Rock North High School, Newtown, PA',
   'Creighton Preparatory School, Omaha, NE',
+  'Crossroads School for Arts & Sciences, Santa Monica, CA',
   'Crown Point High School, Crown Point, IN',
   'Crystal Lake South High School, Crystal Lake, IL',
   'Cy-Fair High School, Cypress, TX',
@@ -2178,6 +2181,7 @@ window._hsKnown=[
   'Flanagan High School, Pembroke Pines, FL',
   'Fleming Island High School, Fleming Island, FL',
   'Flint Hill School, Oakton, VA',
+  'Flintridge Preparatory School, La Canada Flintridge, CA',
   'Flintridge Sacred Heart Academy, La Canada Flintridge, CA',
   'Flower Mound High School, Flower Mound, TX',
   'Fort Bend Bush High School, Richmond, TX',
@@ -2342,6 +2346,7 @@ window._hsKnown=[
   'Manhasset High School, Manhasset, NY',
   'Marcus High School, Flower Mound, TX',
   'Marin Catholic High School, Kentfield, CA',
+  'Marlborough School, Los Angeles, CA',
   'Marist School, Bayshore, FL',
   'Marquette High School, Chesterfield, MO',
   'Marquette University High School, Milwaukee, WI',
@@ -2425,6 +2430,7 @@ window._hsKnown=[
   'Oak Grove High School, Hattiesburg, MS',
   'Oak Hall School, Gainesville, FL',
   'Oakland High School, Murfreesboro, TN',
+  'Oakwood School, North Hollywood, CA',
   'Oaks Christian School, Westlake Village, CA',
   'Ocean City High School, Ocean City, NJ',
   'Oconomowoc High School, Oconomowoc, WI',
@@ -2467,6 +2473,7 @@ window._hsKnown=[
   'Pleasant Valley High School, Bettendorf, IA',
   'Plymouth-Whitemarsh High School, Plymouth Meeting, PA',
   'Poly Prep Country Day School, Brooklyn, NY',
+  'Polytechnic School, Pasadena, CA',
   'Pomona High School, Arvada, CO',
   'Ponte Vedra High School, Ponte Vedra Beach, FL',
   'Pope High School, Marietta, GA',
@@ -2644,6 +2651,7 @@ window._hsKnown=[
   'Vianney High School, Kirkwood, MO',
   'Villa Maria Academy, Malvern, PA',
   'Villa Park High School, Villa Park, CA',
+  'Viewpoint School, Calabasas, CA',
   'Vista Del Lago High School, Folsom, CA',
   'Volcano Vista High School, Albuquerque, NM',
   'Wake Forest High School, Wake Forest, NC',
@@ -2671,6 +2679,7 @@ window._hsKnown=[
   'Westfield High School, Westfield, IN',
   'Westhill High School, Stamford, CT',
   'Westlake High School, Austin, TX',
+  'Westridge School, Pasadena, CA',
   'Westlake High School, Westlake Village, CA',
   'Westview High School, San Diego, CA',
   'Westwood High School, Austin, TX',
@@ -2682,6 +2691,7 @@ window._hsKnown=[
   'Williston Northampton School, Easthampton, MA',
   'Windermere High School, Windermere, FL',
   'Windham High School, Windham, NH',
+  'Windward School, Los Angeles, CA',
   'Winter Park High School, Winter Park, FL',
   'Wiregrass Ranch High School, Wesley Chapel, FL',
   'Woodbridge High School, Irvine, CA',
@@ -2956,6 +2966,13 @@ let _sessionHandled=false;
 function init(){
   // Auth listener — fires immediately with existing session or null
   _supa.auth.onAuthStateChange(async(event,session)=>{
+    // INITIAL_SESSION = Supabase auto-restoring a cached session from a previous visit.
+    // This app serves multiple athletes on the same device, so we NEVER auto-login.
+    // Sign out the restored session immediately and keep the login screen visible.
+    if(event==='INITIAL_SESSION'&&session&&session.user){
+      await _supa.auth.signOut();
+      return; // auth-overlay stays visible; user must log in fresh
+    }
     if(session&&session.user){
       _supaUser=session.user;
       const lb=el('logout-btn');if(lb)lb.style.display='';
