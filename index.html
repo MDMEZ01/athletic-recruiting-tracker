@@ -3083,6 +3083,12 @@ function renderWizSportTags(){
 }
 function initSportDatalist(){/* datalist replaced by custom dropdown — no-op */}
 function hideSportDropdown(id){const w=document.getElementById(id||'sport-suggestions');if(w)w.style.display='none';}
+function pickSport(inputId,sport,suggId,addFn){
+  const inp2=document.getElementById(inputId);if(inp2)inp2.value=sport;
+  const fn=addFn||'wizardAddSport';
+  if(typeof window[fn]==='function')window[fn]();
+  hideSportDropdown(suggId||'sport-suggestions');
+}
 function sportDropdownFilter(inp, suggId, addFn){
   const wrapId=suggId||'sport-suggestions';
   const wrap=document.getElementById(wrapId);if(!wrap)return;
@@ -3093,7 +3099,8 @@ function sportDropdownFilter(inp, suggId, addFn){
   if(!matches.length){wrap.style.display='none';return;}
   wrap.style.display='block';
   const addFunc=addFn||'wizardAddSport';
-  wrap.innerHTML=matches.map(s=>`<div onmousedown="event.preventDefault();el('${inp.id}').value=${JSON.stringify(s)};${addFunc}();hideSportDropdown('${wrapId}')" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f4f8" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
+  // onmousedown prevents input blur (keeps dropdown visible); onclick fires on both desktop and iPhone tap
+  wrap.innerHTML=matches.map(s=>`<div onmousedown="event.preventDefault()" onclick="pickSport('${inp.id}',${JSON.stringify(s)},'${wrapId}','${addFunc}')" style="padding:12px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f0f4f8;-webkit-tap-highlight-color:rgba(49,130,206,.15)" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">${h(s)}</div>`).join('');
 }
 // Close sport dropdown on outside tap
 document.addEventListener('click',function(e){
@@ -3407,8 +3414,8 @@ function renderTracker(){
 function buildTrackerRow(s,ms){
   const c=interestC(s.interest);
   const outreach=s.outreach||[];const visits=s.campusVisit||[];
-  const outHtml=outreach.map((e,i)=>`<div class="log-entry"><input class="cell-input fp-date" value="${h(e.date||'')}" placeholder="mm/dd/yyyy" onchange="updateLogEntry('${s.id}','outreach',${i},'date',this.value)"><textarea class="cell-ta" style="min-height:26px" rows="1" onchange="updateLogEntry('${s.id}','outreach',${i},'note',this.value)">${h(e.note||'')}</textarea><button class="log-del" onclick="removeLogEntry('${s.id}','outreach',${i})" title="Remove">✕</button></div>`).join('');
-  const visitHtml=visits.map((e,i)=>`<div class="log-entry"><input class="cell-input fp-date" value="${h(e.date||'')}" placeholder="mm/dd/yyyy" onchange="updateLogEntry('${s.id}','campusVisit',${i},'date',this.value)"><textarea class="cell-ta" style="min-height:26px" rows="1" onchange="updateLogEntry('${s.id}','campusVisit',${i},'note',this.value)">${h(e.note||'')}</textarea><button class="log-del" onclick="removeLogEntry('${s.id}','campusVisit',${i})" title="Remove">✕</button></div>`).join('');
+  const outHtml=outreach.map((e,i)=>`<div class="log-entry"><input class="cell-input fp-date" value="${h(e.date||'')}" placeholder="mm/dd/yyyy" onchange="updateLogEntry('${s.id}','outreach',${i},'date',this.value)"><textarea class="cell-ta" style="min-height:80px" rows="3" onchange="updateLogEntry('${s.id}','outreach',${i},'note',this.value)">${h(e.note||'')}</textarea><button class="log-del" onclick="removeLogEntry('${s.id}','outreach',${i})" title="Remove">✕</button></div>`).join('');
+  const visitHtml=visits.map((e,i)=>`<div class="log-entry"><input class="cell-input fp-date" value="${h(e.date||'')}" placeholder="mm/dd/yyyy" onchange="updateLogEntry('${s.id}','campusVisit',${i},'date',this.value)"><textarea class="cell-ta" style="min-height:80px" rows="3" onchange="updateLogEntry('${s.id}','campusVisit',${i},'note',this.value)">${h(e.note||'')}</textarea><button class="log-del" onclick="removeLogEntry('${s.id}','campusVisit',${i})" title="Remove">✕</button></div>`).join('');
   const siteLink=s.website?`<br><a href="${h(s.website)}" target="_blank" rel="noopener" style="font-size:10px;color:#3182ce;text-decoration:none">🔗 Website</a>`:'';
   return `<tr data-id="${s.id}" data-interest="${h(s.interest)}" data-sport="${h(s.sport||'')}">
     <td class="col-interest"><select class="cell-select" onchange="updateField('${s.id}','interest',this.value)">${INTEREST_ORDER.map(lv=>`<option value="${lv}"${s.interest===lv?' selected':''}>${lv==='#1'?'⭐ #1':lv}</option>`).join('')}</select></td>
